@@ -5,9 +5,7 @@ class l_element {
 public:
 	l_element() {};
 
-	l_element(TE data_, l_element<TE>* next_element_ptr_) : m_data(data_), m_next_element_ptr(next_element_ptr_) {}
-
-	l_element(TE data_) : m_data(data_) {}
+	l_element(TE data_, l_element<TE>* next_element_ptr_ = nullptr) : m_data(data_), m_next_element_ptr(next_element_ptr_) {}
 
 	l_element(l_element<TE>* next_element_ptr_) : m_next_element_ptr(next_element_ptr_) {}
 
@@ -97,15 +95,8 @@ public:
 			push(*it);
 	}
 
-	~ordered_list() {}
-
-	// Sorts list elements
-	void sort() {
-		unsigned current_pos = 0;
-		for (auto it = begin(); it != end(); it++) {
-
-			current_pos++;
-		}
+	~ordered_list() {
+		clear();
 	}
 
 	// Adds data in sorted way. Needs TL type to have ">" operator implemented
@@ -219,7 +210,7 @@ public:
 		return temp_iterator;
 	}
 
-	// Searches for the element with mini
+	// Searches for the element with minimal value
 	l_iterator<TL> find_min(l_iterator<TL> begin_ = begin(), l_iterator<TL> end_ = end()) {
 		l_iterator<TL> current_min(begin_);
 		for (auto it = begin_; it != end_; it++) {
@@ -306,8 +297,8 @@ private:
 	}
 
 	// Inserts data into the list at pos_
-	void insert(int pos_, TL data_) {
-		if (m_head == nullptr || pos_ <= 0) {
+	void insert(unsigned int pos_, TL data_) {
+		if (m_head == nullptr || pos_ == 0) {
 			push_front(data_);
 			return;
 		}
@@ -317,7 +308,7 @@ private:
 			return;
 		}
 
-		int current_pos = 0;
+		unsigned int current_pos = 0;
 		l_element<TL>* current_element = m_head;
 		l_element<TL>* previous_element = nullptr;
 		while (current_element->next() != nullptr && current_pos < pos_) {
