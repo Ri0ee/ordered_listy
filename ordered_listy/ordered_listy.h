@@ -1,88 +1,89 @@
 #pragma once
 
-template<class TE>
-class l_element {
-public:
-	l_element() {};
-
-	l_element(TE data_, l_element<TE>* next_element_ptr_ = nullptr) : m_data(data_), m_next_element_ptr(next_element_ptr_) {}
-
-	l_element(l_element<TE>* next_element_ptr_) : m_next_element_ptr(next_element_ptr_) {}
-
-	~l_element() {};
-
-	l_element<TE>*& next() {
-		return m_next_element_ptr;
-	}
-
-	TE& get_data() {
-		return m_data;
-	}
-
-private:
-	TE m_data{};
-	l_element<TE>* m_next_element_ptr = nullptr;
-};
-
-template<class TI>
-class l_iterator {
-public:
-	l_iterator() {}
-
-	l_iterator(const l_iterator<TI>& iterator_) {
-		m_element_ptr = iterator_.element();
-	}
-
-	l_iterator(l_element<TI>* element_ptr_) : m_element_ptr(element_ptr_) {}
-
-	~l_iterator() {}
-
-	l_iterator<TI>& operator++() { // Prefix increment
-		m_element_ptr = m_element_ptr->next();
-		return *this;
-	}
-
-	l_iterator<TI> operator++(int) { // Postfix increment
-		l_iterator<TI> result(*this);
-		++(*this);
-		return result;
-	}
-
-	TI& operator*() {
-		return m_element_ptr->get_data();
-	}
-
-	bool operator==(const l_iterator<TI>& iterator_) {
-		return iterator_.element() == m_element_ptr;
-	}
-
-	bool operator!=(const l_iterator<TI>& iterator_) {
-		return iterator_.element() != m_element_ptr;
-	}
-
-	l_element<TI>* element() const {
-		return m_element_ptr;
-	}
-
-	void swap_data(l_iterator<TI>& iterator_) {
-		TI temp_data = iterator_.element()->get_data();
-		iterator_.element()->get_data() = m_element_ptr->get_data();
-		m_element_ptr->get_data() = temp_data;
-	}
-
-	void swap(l_iterator<TI>& iterator_) {
-		l_element<TI>* temp_element_ptr = iterator_.element();
-		iterator_.element() = m_element_ptr;
-		m_element_ptr = temp_element_ptr;
-	}
-
-private:
-	l_element<TI>* m_element_ptr = nullptr;
-};
-
 template<class TL>
 class ordered_list {
 public:
+
+	class l_element {
+	public:
+		l_element() {};
+
+		l_element(TL data_, l_element* next_element_ptr_ = nullptr) : m_data(data_), m_next_element_ptr(next_element_ptr_) {}
+
+		l_element(l_element* next_element_ptr_) : m_next_element_ptr(next_element_ptr_) {}
+
+		~l_element() {};
+
+		l_element*& next() {
+			return m_next_element_ptr;
+		}
+
+		TL& get_data() {
+			return m_data;
+		}
+
+	private:
+		TL m_data{};
+		l_element* m_next_element_ptr = nullptr;
+	};
+
+	class l_iterator {
+	public:
+		l_iterator() {}
+
+		l_iterator(const l_iterator& iterator_) {
+			m_element_ptr = iterator_.element();
+		}
+
+		l_iterator(l_element* element_ptr_) : m_element_ptr(element_ptr_) {}
+
+		~l_iterator() {}
+
+		l_iterator& operator++() { // Prefix increment
+			m_element_ptr = m_element_ptr->next();
+			return *this;
+		}
+
+		l_iterator operator++(int) { // Postfix increment
+			l_iterator result(*this);
+			++(*this);
+			return result;
+		}
+
+		TL& operator*() {
+			return m_element_ptr->get_data();
+		}
+
+		bool operator==(const l_iterator& iterator_) {
+			return iterator_.element() == m_element_ptr;
+		}
+
+		bool operator!=(const l_iterator& iterator_) {
+			return iterator_.element() != m_element_ptr;
+		}
+
+		l_element* element() const {
+			return m_element_ptr;
+		}
+
+		void swap_data(l_iterator& iterator_) {
+			TL temp_data = iterator_.element()->get_data();
+			iterator_.element()->get_data() = m_element_ptr->get_data();
+			m_element_ptr->get_data() = temp_data;
+		}
+
+		void swap(l_iterator& iterator_) {
+			l_element* temp_element_ptr = iterator_.element();
+			iterator_.element() = m_element_ptr;
+			m_element_ptr = temp_element_ptr;
+		}
+
+	private:
+		l_element* m_element_ptr = nullptr;
+	};
+
+	// ORDERED LIST
+	
 	ordered_list() {}
 
 	ordered_list(ordered_list& list_) {
@@ -90,7 +91,7 @@ public:
 			push(*it);
 	}
 
-	ordered_list(l_iterator<TL> begin_iterator_, l_iterator<TL> end_iterator_ = l_iterator<TL>(nullptr)) {
+	ordered_list(l_iterator begin_iterator_, l_iterator end_iterator_ = l_iterator(nullptr)) {
 		for (auto it = begin_iterator_; it != end_iterator_; it++)
 			push(*it);
 	}
@@ -100,55 +101,34 @@ public:
 	}
 
 	// Adds data in sorted way. Needs TL type to have ">" operator implemented
-	void add(TL data_) {
-		if (m_head == nullptr) {
-			push_front(data_);
-			m_tail = m_head;
-			return;
-		}
+	l_iterator add(TL data_) {
+		if (m_head == nullptr) // If the list is currently empty
+			return push_front(data_);
 
 		unsigned int current_pos = 0;
 		for (auto it = begin(); it != end(); it++) {
-			if (*it > data_) {
-				insert(current_pos, data_);
-				return;
-			}
+			if (*it > data_) // This requires TL type to have comparsion operator 
+				return push(current_pos, data_);
+				
 			current_pos++;
 		}
 
-		push(data_);
+		return push(data_); // If we didn't find elements that have bigger value than ours does
 	}
 
 	// Remove last element. Returns true if removed anything
 	bool pop() {
 		if (m_head == nullptr) return false;
 
-		if (m_pre_tail != nullptr) { // If we got pre-tail element due to some actions, it is faster to pop the list in such way
-			delete m_tail;
-			m_pre_tail->next() = nullptr;
-			m_tail = m_pre_tail;
+		l_iterator ptail = pre_tail();
+		if (ptail.element() == nullptr) {
+			pop_front();
 		}
 		else {
-			l_element<TL>* tail = m_head;
-			l_element<TL>* ptail = pre_tail();
-			while (tail->next() != nullptr) { // Search for the tail and pre-tail elements
-				pre_tail = tail;
-				tail = tail->next();
-			}
-
-			delete tail;
-			if (pre_tail != nullptr) { // If there are at least 2 elements in array
-				pre_tail->next() = nullptr;
-				m_tail = pre_tail;
-			}
-			else { // If there is only one element in array and it got deleted
-				m_head = nullptr;
-				m_tail = nullptr;
-			}
+			delete ptail.element()->next();
+			ptail.element()->next() = nullptr;
 		}
 
-		m_pre_tail = nullptr;
-		m_size--;
 		return true;
 	}
 
@@ -156,33 +136,24 @@ public:
 	bool pop_front() {
 		if (m_head == nullptr) return false;
 
-		l_element<TL>* temp_element = m_head->next();
+		l_element* temp_element = m_head->next();
 		delete m_head;
 		m_head = temp_element;
 
-		m_size--;
 		return true;
 	}
 
 	// Removes one element from the list. Returns true if removed anything
 	bool remove(int pos_) {
-		if (m_head == nullptr || pos_ < 0 || pos_ >= m_size) return false;
+		if (m_head == nullptr || pos_ < 0) return false;
 		if (pos_ == 0) return pop_front();
-		if (pos_ == m_size - 1) return pop();
+		if (pos_ >= size() - 1) return pop();
 
-		int current_pos = 0;
-		l_element<TL>* current_element = m_head;
-		l_element<TL>* previous_element = nullptr;
-		while (current_element->next() != nullptr && current_pos < pos_) { // Iterate to the needed element
-			previous_element = current_element;
-			current_element = current_element->next();
-			current_pos++;
-		}
+		l_iterator prev = seek_before(pos_);
+		l_iterator after(prev.element()->next()->next());
+		delete prev.element()->next();
+		prev.element()->next() = after.element();
 
-		previous_element->next() = current_element->next();
-		delete current_element;
-
-		m_size--;
 		return true;
 	}
 
@@ -192,72 +163,81 @@ public:
 	}
 
 	// Searches for the first appearance of data in list
-	l_iterator<TL> find_first(TL data_) {
-		for (auto it = begin(); it != end(); it++) {
-			if (*it == data_) return l_iterator<TL>(it);
-		}
+	l_iterator find_first(TL data_) {
+		for (auto it = begin(); it != end(); it++)
+			if (*it == data_) return l_iterator(it);
 
 		return end();
 	}
 
 	// Searches for the last appearance of data in list
-	l_iterator<TL> find_last(TL data_) {
-		l_iterator<TL> temp_iterator = end();
-		for (auto it = begin(); it != end(); it++) {
+	l_iterator find_last(TL data_) {
+		l_iterator temp_iterator = end();
+		for (auto it = begin(); it != end(); it++)
 			if (*it == data_) temp_iterator = it;
-		}
 
 		return temp_iterator;
 	}
 
 	// Searches for the element with minimal value
-	l_iterator<TL> find_min(l_iterator<TL> begin_ = begin(), l_iterator<TL> end_ = end()) {
-		l_iterator<TL> current_min(begin_);
-		for (auto it = begin_; it != end_; it++) {
-			if (*current_min > *it) {
-				current_min = it;
-			}
-		}
+	l_iterator find_min(l_iterator begin_ = begin(), l_iterator end_ = end()) {
+		l_iterator current_min(begin_);
+		for (auto it = begin_; it != end_; it++)
+			if (*current_min > *it) current_min = it;
+		
 		return current_min;
 	}
 
-	l_iterator<TL> find_max(l_iterator<TL> begin_ = begin(), l_iterator<TL> end_ = end()) {
-		l_iterator<TL> current_max(begin_);
-		for (auto it = begin_; it != end_; it++) {
-			if (*current_max < *it) {
-				current_max = it;
-			}
-		}
+	// Searches for the element with highest value
+	l_iterator find_max(l_iterator begin_ = begin(), l_iterator end_ = end()) {
+		l_iterator current_max(begin_);
+		for (auto it = begin_; it != end_; it++)
+			if (*current_max < *it) current_max = it;
+		
 		return current_max;
 	}
 
 	// Returns amount of elements in list
 	unsigned int size() {
-		return m_size;
+		unsigned int temp_size = 0;
+		for (auto it = begin(); it != end(); it++)
+			temp_size++;
+		
+		return temp_size;
 	}
 
 	// Returns iterator of the first element of the list
-	l_iterator<TL> begin() {
-		return l_iterator<TL>(m_head);
+	l_iterator begin() {
+		return l_iterator(m_head);
 	}
 
 	// Returns iterator signalling about the end for the list
-	l_iterator<TL> end() {
-		return l_iterator<TL>(nullptr);
+	l_iterator end() {
+		return l_iterator(nullptr);
 	}
 
-	// Returns iterator of the last element of the list
-	l_iterator<TL> tail() {
-		return l_iterator<TL>(m_tail);
+	// Returns iterator to the last element of the list
+	l_iterator tail() {
+		for (auto it = begin(); it != end(); it++)
+			if (it.element()->next() == nullptr) return it;
+		
+		return l_iterator(nullptr);
 	}
 
-	// Returns iterator of the element which stays before the tail
-	l_iterator<TL> pre_tail() {
-		return l_iterator<TL>(m_pre_tail);
+	// Returns iterator to the element that stays before last element
+	l_iterator pre_tail() {
+		for (auto it = begin(); it != end(); it++)
+			if (it.element()->next() != nullptr) {
+				if (it.element()->next()->next() == nullptr)
+					return it;
+			}
+			else break;
+			
+		return l_iterator(nullptr);
 	}
 
 	// Returns distance between two iterators (amount of elements between them)
-	int distance(l_iterator<TL> begin_iterator_, l_iterator<TL> dest_iterator_) {
+	int distance(l_iterator begin_iterator_, l_iterator dest_iterator_) {
 		int counter = 0;
 		for (auto it = begin_iterator_; it != end(); it++) {
 			if (it == dest_iterator_) return counter;
@@ -268,57 +248,53 @@ public:
 	}
 
 private:
-	l_element<TL>* m_head = nullptr;
-	l_element<TL>* m_tail = nullptr;
-	l_element<TL>* m_pre_tail = nullptr;
-	unsigned int m_size = 0;
+	l_element* m_head = nullptr; // Pointer to the first element of the list
+
+	l_iterator seek(unsigned int position_) {
+		unsigned int current_position = 0;
+		for (auto it = begin(); it != end() && current_position <= position_; it++) {
+			if (current_position == position_)
+				return it;
+			current_position++;
+		}
+		return l_iterator(nullptr);
+	}
+
+	l_iterator seek_before(unsigned int position_) {
+		return seek(position_ - 1);
+	}
+
+	l_iterator seek_after(unsigned int position_) {
+		return seek(position_ + 1);
+	}
 
 	// Push data to the end of the list
-	void push(TL data_) {
-		if (m_head == nullptr) {
-			m_head = new l_element<TL>(data_);
-			m_tail = m_head;
-			m_size++;
-			return;
-		}
+	l_iterator push(TL data_) {
+		if (m_head == nullptr)
+			return push_front(data_);
 
-		m_tail->next() = new l_element<TL>(data_);
-		m_pre_tail = m_tail;
-		m_tail = m_tail->next();
-		m_size++;
+		l_element* temp_element = new l_element(data_);
+		tail().element()->next() = temp_element;
+		
+		return l_iterator(temp_element);
 	}
 
 	// Push data before the first element (head)
-	void push_front(TL data_) {
-		l_element<TL>* new_head = new l_element<TL>(data_, m_head);
+	l_iterator push_front(TL data_) {
+		l_element* new_head = new l_element(data_, m_head);
 		m_head = new_head;
-
-		m_size++;
+		
+		return l_iterator(m_head);
 	}
 
-	// Inserts data into the list at pos_
-	void insert(unsigned int pos_, TL data_) {
-		if (m_head == nullptr || pos_ == 0) {
-			push_front(data_);
-			return;
-		}
+	// Inserts one element into the list
+	l_iterator push(unsigned int pos_, TL data_) {
+		if (m_head == nullptr || pos_ <= 0)
+			return push_front(data_);
 
-		if (pos_ >= m_size) {
-			push(data_);
-			return;
-		}
-
-		unsigned int current_pos = 0;
-		l_element<TL>* current_element = m_head;
-		l_element<TL>* previous_element = nullptr;
-		while (current_element->next() != nullptr && current_pos < pos_) {
-			previous_element = current_element;
-			current_element = current_element->next();
-			current_pos++;
-		}
-
-		previous_element->next() = new l_element<TL>(data_, current_element);
-
-		m_size++;
+		l_iterator prev = seek_before(pos_);
+		prev.element()->next() = new l_element(data_, prev.element()->next());
+		
+		return l_iterator(prev.element()->next());
 	}
 };
